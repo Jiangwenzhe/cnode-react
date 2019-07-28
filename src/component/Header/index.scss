@@ -1,0 +1,33 @@
+.header {
+  background: #444;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  > .logo {
+    margin-left: 20px;
+    width: 120px;
+    padding: 3px 20px;
+    height: 34px;
+    line-height: 34px;
+    img {
+      height: auto;
+      max-width: 100%;
+      vertical-align: initial;
+    }
+  }
+  > .about {
+    flex: 1;
+    text-align: right;
+    margin-right: 25px;
+    color: white;
+    font-size: 18px;
+    font-weight: bolder;
+    cursor: pointer;
+    &:hover {
+      color: #7FBD01;
+      animation: linear 1;
+    }
+  }
+
+
+}
