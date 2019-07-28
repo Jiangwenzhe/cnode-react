@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Modal, Icon } from "antd";
-import './index.scss';
+import './header.scss';
 
 class Header extends Component {
   state = { visible: false };
