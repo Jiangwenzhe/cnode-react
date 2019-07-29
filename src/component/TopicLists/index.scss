@@ -1,0 +1,26 @@
+.list {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  > .reply_count {
+    width: 85px;
+    em {
+      font-size: 12px;
+      &:first-child {
+        font-weight: bolder;
+        color: #D94A38;
+        font-size: 15px;
+      }
+    }
+  }
+  > .title {
+    width: 67%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  > .time {
+    font-size: 13px;
+  }
+}
