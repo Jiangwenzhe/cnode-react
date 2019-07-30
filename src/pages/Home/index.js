@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Tabs } from 'antd';
+import { Tabs, Pagination } from 'antd';
 import './home.scss';
 import { getTopics } from "../../utils/api";
 import TopicLists from "../../component/TopicLists";
@@ -13,10 +13,14 @@ class Home extends Component {
     topicInfo: [],
     tab: 'all',
     store: {},
+    isLoading: false,
   };
 
   getTopicsInfo() {
     const { page, limit, tab, store } = this.state;
+    this.setState({
+      isLoading: true,
+    });
     getTopics({
       page: page,
       limit: limit,
@@ -24,7 +28,7 @@ class Home extends Component {
     }).then(response => {
       this.setState({
         topicInfo: response.data,
-        page: page + 1
+        isLoading: false
       });
       store[tab] = {
         page: page,
@@ -34,7 +38,6 @@ class Home extends Component {
   };
 
   handleTabChange = tab => {
-    console.log(tab);
     const { store } = this.state;
     if (!store[tab]) {
       this.setState(
@@ -56,19 +59,28 @@ class Home extends Component {
     })
   };
 
+  handlePageChange = page => {
+    console.log(page);
+    this.setState({
+      page: page
+    }, () => {
+      this.getTopicsInfo();
+    });
+  };
+
   componentDidMount() {
     this.getTopicsInfo();
   }
 
   render() {
-    const { topicInfo } = this.state;
+    const { topicInfo, page, limit, isLoading } = this.state;
     return (
       <div className="home">
         {/*<Loading status={true}/>*/}
         <div>
           <Tabs defaultActiveKey="all" onChange={this.handleTabChange}>
             <TabPane tab="全部" key="all">
-              <TopicLists topicInfo={topicInfo}/>
+              <TopicLists topicInfo={topicInfo} status={isLoading}/>
             </TabPane>
             <TabPane tab="精华" key="good">
               <TopicLists topicInfo={topicInfo}/>
@@ -83,6 +95,9 @@ class Home extends Component {
               <TopicLists topicInfo={topicInfo}/>
             </TabPane>
           </Tabs>
+          { //page-1 > 0  &&
+            <Pagination current={page} size="small" number={limit} total={3000} onChange={this.handlePageChange}/>
+          }
         </div>
       </div>
     )
