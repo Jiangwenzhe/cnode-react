@@ -30,7 +30,7 @@ http.interceptors.response.use(
     return response.data;
   },
   err => {
-    error(`返回请求错误，响应码 ${err.response.status}`);
+    error(`返回请求错误`);
     return Promise.reject(err);
   }
 );

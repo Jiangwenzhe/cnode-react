@@ -20,12 +20,13 @@ export const tabs = {
 };
 
 export const timeStampToTimeAgo = (timestamp) => {
+  console.log(moment(timestamp, "YYYY-MM-DD").startOf('day').fromNow());
   let timeStampToString = moment(timestamp, "YYYY-MM-DD").startOf('day').fromNow();
-  if (timeStampToString.includes('days')) {
+  if (timeStampToString.includes('day')) {
     return timeStampToString.replace('days ago', '天前');
-  } else if (timeStampToString.includes('hours')) {
+  } else if (timeStampToString.includes('hour')) {
     return timeStampToString.replace('hours ago', '小时前');
-  } else if (timeStampToString.includes('months')) {
-    return timeStampToString.replace('months ago', '个月前');
+  } else if (timeStampToString.includes('month')) {
+    return timeStampToString.replace(/(months|month) ago/s, '个月前').replace('a', '1');
   }
 };
