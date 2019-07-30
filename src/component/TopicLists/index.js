@@ -3,8 +3,8 @@ import { List, Avatar, Skeleton, Tag} from 'antd';
 import { tabs, timeStampToTimeAgo } from '../../utils/tool';
 import './index.scss';
 
-const TopicLists = ({ topicInfo }) => {
-  if (topicInfo.length === 0) {
+const TopicLists = ({ topicInfo, status }) => {
+  if (topicInfo.length === 0 || status) {
    return (
      <Skeleton active />
    )
