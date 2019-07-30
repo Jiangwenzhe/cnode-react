@@ -1,10 +1,10 @@
 import React from 'react';
 import { List, Avatar, Skeleton, Tag} from 'antd';
-import { tabs, timeStampToDaysAgo } from '../../utils/tool';
+import { tabs, timeStampToTimeAgo } from '../../utils/tool';
 import './index.scss';
 
 const TopicLists = ({ topicInfo }) => {
-  if (!topicInfo) {
+  if (topicInfo.length === 0) {
    return (
      <Skeleton active />
    )
@@ -29,7 +29,7 @@ const TopicLists = ({ topicInfo }) => {
              {item.title}
            </span>
            <span className="time">
-             {timeStampToDaysAgo(item.last_reply_at)}
+             {timeStampToTimeAgo(item.last_reply_at)}
            </span>
          </List.Item>
        )}
