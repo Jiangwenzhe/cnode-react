@@ -20,18 +20,18 @@ http.interceptors.request.use(
   },
   err => {
     error('发送请求错误!');
-    return Promise.error(err);
+    return Promise.reject(err);
   }
 );
 
 // 接受请求拦截器
-http.interceptors.request.use(
+http.interceptors.response.use(
   response => {
     return response.data;
   },
   err => {
     error(`返回请求错误，响应码 ${err.response.status}`);
-    return Promise.error(error);
+    return Promise.reject(err);
   }
 );
 
