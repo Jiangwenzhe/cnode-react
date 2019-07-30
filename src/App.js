@@ -1,12 +1,20 @@
 import React, { Component } from 'react';
-import { Button } from 'antd';
+import { HashRouter, Route, Redirect } from 'react-router-dom'
+import Header from './component/Header';
+import Home from './pages/Home';
 import './App.scss';
 
 class App extends Component {
   render() {
     return (
-        <div className="App">
-          <Button type="primary">Button</Button>
+        <div>
+          <Header />
+          <HashRouter>
+            <div>
+              <Route exact path="/" component={Home} />
+              <Route exact path="/topic" render={() => <Redirect to="/" />} />
+            </div>
+          </HashRouter>
         </div>
     );
   }
