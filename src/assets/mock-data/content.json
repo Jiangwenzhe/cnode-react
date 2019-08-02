@@ -1,0 +1,684 @@
+{
+  "success": true,
+  "data": {
+    "id": "5cbfd9aca86ae80ce64b3175",
+    "author_id": "4f447c2f0a8abae26e01b27d",
+    "tab": "share",
+    "content": "<div class=\"markdown-text\"><h2>前言</h2>\n<p>时隔一年，Node.js 12 如约而至，正式发布第一个 <a href=\"https://github.com/nodejs/Release\">Current</a> 版本。</p>\n<p>该版本带来了诸如：</p>\n<ul>\n<li>V8 更新带来好多不错的特性。</li>\n<li>HTTP 解析速度提升。</li>\n<li>启动速度大幅提升。</li>\n<li>更好的诊断报告和堆分析工具。</li>\n<li>ESM 模块更新。</li>\n</ul>\n<p>原文地址：<a href=\"https://medium.com/@nodejs/introducing-node-js-12-76c41a1b3f3f\">https://medium.com/@nodejs/introducing-node-js-12-76c41a1b3f3f</a>\n语雀地址：<a href=\"https://www.yuque.com/egg/nodejs/nodejs-12\">https://www.yuque.com/egg/nodejs/nodejs-12</a></p>\n<h2>LTS vs Current</h2>\n<p><img src=\"https://cdn.nlark.com/yuque/0/2019/png/84182/1556074709431-35af45b8-ec7a-4a81-83d8-155eb519f04a.png#align=left&amp;display=inline&amp;height=389&amp;name=image.png&amp;originHeight=500&amp;originWidth=960&amp;size=58313&amp;status=done&amp;width=746\" alt=\"image.png\"></p>\n<p>如果你不了解 Node.js 的  Long Term Support 发布策略的话，一定要看看 <a href=\"https://github.com/nodejs/Release\">https://github.com/nodejs/Release</a> 。</p>\n<p>就目前而言，Node.js 6.x 和 8.x 将在 2019 年末结束 LTS 的支持，大家尽快升级到 10.x 吧。</p>\n<h2>快速体验</h2>\n<pre class=\"prettyprint language-bash\"><code>$ nvs add node&#x2F;12\n$ nvs use 12\n$ node -v\nv12.0.0\n</code></pre><p>具体参考这篇文章：<a href=\"https://zhuanlan.zhihu.com/p/63403762\">科普文：使用 nvs 管理本地 Node.js 版本</a></p>\n<h2>V8 更新到 7.4</h2>\n<blockquote>\n<p>大部分情况下，我们不用去考虑性能问题，坐等 V8 版本更新就好了。（大雾）</p>\n</blockquote>\n<p>本次版本更新，也带来了好几个不错的特性：</p>\n<ul>\n<li><a href=\"https://v8.dev/blog/v8-release-72#async-stack-traces\">异步堆栈跟踪</a></li>\n<li><a href=\"https://v8.dev/blog/v8-release-74#faster-calls-with-arguments-mismatch\">参数调用不匹配时的调用速度优化</a></li>\n<li><a href=\"https://v8.dev/blog/v8-release-73#faster-await\">更快的 await</a></li>\n<li><a href=\"https://v8.dev/blog/v8-release-72#javascript-parsing\">更快的 JavaScript 解析速度</a></li>\n</ul>\n<p><strong>同时，跑了下我们 Egg 的一些内部测试，发现序列化有 10~20% 的性能提升，恐怖如斯！</strong></p>\n<p>另，奇丑无比的 <a href=\"https://github.com/tc39/proposal-class-fields\">Private Class Fields</a> 也能用了：</p>\n<pre class=\"prettyprint language-javascript\"><code>class IncreasingCounter {\n  #count = 0;\n  \n  get value() {\n    console.log(&#x27;Getting the current value!&#x27;);\n    return this.#count;\n  }\n  increment() {\n    this.#count++;\n  }\n}\n</code></pre><h2>HTTP 解析速度提升</h2>\n<p>默认的 HTTP 解析器切换为 <a href=\"https://github.com/nodejs/llhttp\">llhttp</a> ，性能提升恐怖如斯：</p>\n<p><img src=\"https://cdn.nlark.com/yuque/0/2019/png/84182/1556072499637-686bb0e3-c75c-424c-851f-ad88aff183a2.png#align=left&amp;display=inline&amp;height=231&amp;name=image.png&amp;originHeight=404&amp;originWidth=1302&amp;size=88775&amp;status=done&amp;width=746\" alt=\"image.png\"></p>\n<blockquote>\n<p>点评：恐怖如斯。</p>\n</blockquote>\n<h2>启动速度提升</h2>\n<p>通过 <a href=\"https://v8.dev/blog/code-caching\">v8 code cache</a> 的支持，<a href=\"https://github.com/nodejs/node/pull/27161\">在构建时提前为内置库生成代码缓存</a>，从而提升 30% 的启动耗时。\n同时，通过<a href=\"https://github.com/nodejs/node/pull/24950\">重用主进程缓存</a>，Workers Threads 的启动速度提升了 60% 。</p>\n<blockquote>\n<p>点评：恐怖如斯。</p>\n</blockquote>\n<h2>Workers Threads</h2>\n<p>在 10.x 已经引入的 <a href=\"https://nodejs.org/api/worker_threads.html\">Workers Threads</a> 特性，在 12.x 里面默认启用，无需使用 <code>--experimental-worker</code> 开启。同时基于上一条的介绍，启动的速度也得到大幅提升。</p>\n<p>相关介绍：<a href=\"https://medium.com/@Trott/using-worker-threads-in-node-js-80494136dbb6\">https://medium.com/@Trott/using-worker-threads-in-node-js-80494136dbb6</a></p>\n<h2>诊断报告</h2>\n<p>提供了新的实验性功能『诊断报告』，一个非常有用的特性。\n可用于帮助分析诸如：崩溃，性能问题，内存泄漏，高 CPU 占用等等问题。详见 <a href=\"https://medium.com/the-node-js-collection/easily-identify-problems-in-node-js-applications-with-diagnostic-report-dc82370d8029\">这篇文章</a>。</p>\n<blockquote>\n<p>点评：这也是 <a href=\"https://www.aliyun.com/product/nodejs\">AliNode</a> 之前的一个卖点之一。</p>\n</blockquote>\n<h2>Heap Dump</h2>\n<p>以前我们分析问题的时候，需要手动安装对应的类库或者使用 AliNode。</p>\n<p>在 12.x 里面内置了该功能，详见：</p>\n<ul>\n<li><a href=\"https://github.com/nodejs/node/pull/27133\">https://github.com/nodejs/node/pull/27133</a></li>\n<li><a href=\"https://github.com/nodejs/node/pull/26501\">https://github.com/nodejs/node/pull/26501</a></li>\n</ul>\n<blockquote>\n<p>点评：又一个 <a href=\"https://www.aliyun.com/product/nodejs\">AliNode</a> 的功能被内置了。但其实影响不大，AliNode 的核心在于分析平台，这块的采集能力，本来他们就打算开源回馈出去的。</p>\n</blockquote>\n<p>同时，由于上述提到的 V8 升级，现在可以按照可用内存动态调整堆大小了。</p>\n<h2>ESM 模块方案更新</h2>\n<p>ES6 模块仍然还在实验阶段，不过有了新的方式，具体参见<a href=\"https://medium.com/@nodejs/announcing-a-new-experimental-modules-1be8d2d6c2ff\">这篇文章</a>。</p>\n<blockquote>\n<p>点评：让子弹再飞一会，该特性真的不是痛点，不急。</p>\n</blockquote>\n<h2>其他更新</h2>\n<ul>\n<li>更好的原生模块支持，<a href=\"https://nodejs.org/api/n-api.html#n_api_n_api\">N-API</a> 升级为版本 4，并 backport 到 Node.js 8.x 和 10.x。详细参见<a href=\"https://medium.com/the-node-js-collection/new-features-bring-native-add-ons-close-to-being-on-par-with-js-modules-cd4f9b8e4b4\">这篇文章</a>。</li>\n<li>TLS 升级为 1.3， <a href=\"https://developer.ibm.com/blogs/openssl-111-has-landed-in-nodejs-master-and-why-its-important-for-nodejs-lts-releases/\">增强安全功能</a>。</li>\n<li>随着 C++ 编译器的更新，现在要求 <code>GCC 6</code> 和 <code>glibc 2.17</code> ，对应的操作系统 Win7 和 macOS 10，详细参见<a href=\"https://github.com/nodejs/node/blob/v12.x/BUILDING.md#platform-list\">这篇文章</a>。</li>\n</ul>\n<p>不过目前 node-gyp 的一些原生模块会编译失败：</p>\n<pre class=\"prettyprint language-bash\"><code>nunjucks@3.2.0 › chokidar@2.1.5 › fsevents@^1.2.7 optional error: Error: Run &quot;sh -c node install&quot; error, exit code 1\n    at ChildProcess.&lt;anonymous&gt; (&#x2F;Users&#x2F;tz&#x2F;.npm-global&#x2F;lib&#x2F;node_modules&#x2F;tnpm&#x2F;node_modules&#x2F;_runscript@1.3.0@runscript&#x2F;index.js:74:21)\n    at ChildProcess.emit (events.js:196:13)\n    at maybeClose (internal&#x2F;child_process.js:1000:16)\n    at Process.ChildProcess._handle.onexit (internal&#x2F;child_process.js:267:5)\n</code></pre></div>",
+    "title": "Node 12 值得关注的新特性",
+    "last_reply_at": "2019-07-12T04:34:56.342Z",
+    "good": false,
+    "top": true,
+    "reply_count": 53,
+    "visit_count": 73542,
+    "create_at": "2019-04-24T03:36:12.582Z",
+    "author": {
+      "loginname": "atian25",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/227713?v=4&s=120"
+    },
+    "replies": [
+      {
+        "id": "5cbfdf9a37faec0ce1d05c70",
+        "author": {
+          "loginname": "zy445566",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/14976489?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>node-gyp一直都是尴尬的存在，N-API 也是换汤不换药。不过总体还在进步，这就够了。</p>\n</div>",
+        "ups": [
+          "5cc12846a86ae80ce64b3c93",
+          "5ca4678731010b2dfbb42c4b",
+          "5cda6eaae57aac76fed2a718",
+          "5a71ad98ce45d44045146579",
+          "5cc7db2f05ae566f637fdd18",
+          "5cee45c652ccb64168ba88c9",
+          "5cec8dd852ccb64168ba805c",
+          "5bab9eb98f5b0c1c59ea119f",
+          "5d1b36d0cdb1f967c1577bd2",
+          "5caedf32dad66d658e407de6",
+          "5d35d57fffed731686461975"
+        ],
+        "create_at": "2019-04-24T04:01:30.412Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cbfe009a86ae80ce64b3221",
+        "author": {
+          "loginname": "AnzerWall",
+          "avatar_url": "https://avatars0.githubusercontent.com/u/7315743?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>白嫖的性能提升，真好。\n私有域有了，啥时候有装饰器啊</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-24T04:03:21.146Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cbfe111a86ae80ce64b323c",
+        "author": {
+          "loginname": "zy445566",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/14976489?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/AnzerWall\">@AnzerWall</a> 是啊，原生的装饰器确实比私有域需求更迫切啊</p>\n</div>",
+        "ups": [
+          "551148bdd792542a297899ee"
+        ],
+        "create_at": "2019-04-24T04:07:45.240Z",
+        "reply_id": "5cbfe009a86ae80ce64b3221",
+        "is_uped": false
+      },
+      {
+        "id": "5cc00217a86ae80ce64b344a",
+        "author": {
+          "loginname": "v5sollee",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/25120803?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>恐怖如斯</p>\n</div>",
+        "ups": [
+          "5cc12846a86ae80ce64b3c93",
+          "5cd277c4d37a2a56910a3e42",
+          "5cee45c652ccb64168ba88c9"
+        ],
+        "create_at": "2019-04-24T06:28:39.072Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cc024e337faec0ce1d0610a",
+        "author": {
+          "loginname": "jxycbjhc",
+          "avatar_url": "https://avatars0.githubusercontent.com/u/16661897?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/v5sollee\">@v5sollee</a> 我还以为看到了辰东的小说，恐怖如斯</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-24T08:57:07.844Z",
+        "reply_id": "5cc00217a86ae80ce64b344a",
+        "is_uped": false
+      },
+      {
+        "id": "5cc03fa337faec0ce1d061cb",
+        "author": {
+          "loginname": "zuohuadong",
+          "avatar_url": "https://avatars0.githubusercontent.com/u/11203929?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/AnzerWall\">@AnzerWall</a>   typescript 一时爽， 一直 typescript 一直爽。</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-24T10:51:15.658Z",
+        "reply_id": "5cbfe009a86ae80ce64b3221",
+        "is_uped": false
+      },
+      {
+        "id": "5cc05d1c37faec0ce1d06251",
+        "author": {
+          "loginname": "i5ting",
+          "avatar_url": "https://avatars3.githubusercontent.com/u/3118295?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>llhttp代码更新的还是挺有意思的，给猪哥点赞</p>\n</div>",
+        "ups": [
+          "5ccfebed5a5bae6e07813690",
+          "5ca4678731010b2dfbb42c4b",
+          "5cc7db2f05ae566f637fdd18"
+        ],
+        "create_at": "2019-04-24T12:57:00.940Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cc05ed137faec0ce1d06265",
+        "author": {
+          "loginname": "zengming00",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/5255081?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>有生之年一定能看到node v100</p>\n</div>",
+        "ups": [
+          "56414c09058fbfc65d8a495f",
+          "5cc12846a86ae80ce64b3c93",
+          "5ccfebed5a5bae6e07813690",
+          "5ca4678731010b2dfbb42c4b"
+        ],
+        "create_at": "2019-04-24T13:04:17.060Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cc06dcc37faec0ce1d062bb",
+        "author": {
+          "loginname": "atian25",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/227713?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/zengming00\">@zengming00</a> 那你要努力活久点，少点 996 . 按当前 Node 的节奏 <a href=\"https://github.com/nodejs/Release\">https://github.com/nodejs/Release</a> ，一年是 2 个版本，到 100 的话，差不多是 2106 年。</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-24T14:08:12.430Z",
+        "reply_id": "5cc05ed137faec0ce1d06265",
+        "is_uped": false
+      },
+      {
+        "id": "5cc06f8ca86ae80ce64b38e9",
+        "author": {
+          "loginname": "zbinlin",
+          "avatar_url": "https://avatars1.githubusercontent.com/u/880513?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><blockquote>\n<p>奇丑无比的 Private Class Fields</p>\n</blockquote>\n<p>+10086</p>\n</div>",
+        "ups": [
+          "5cc12846a86ae80ce64b3c93",
+          "599fcc08ebaa046923a82766"
+        ],
+        "create_at": "2019-04-24T14:15:40.351Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cc10abc37faec0ce1d06425",
+        "author": {
+          "loginname": "zengming00",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/5255081?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/atian25\">@atian25</a> 从未996，最惨的时候是17年在兔展大小周，我基本上都是准时上下班的。18年更是从未加过班，我的原则就是加班时间效率约等于0</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-25T01:17:48.356Z",
+        "reply_id": "5cc06dcc37faec0ce1d062bb",
+        "is_uped": false
+      },
+      {
+        "id": "5cc11a3437faec0ce1d065b2",
+        "author": {
+          "loginname": "ruyuejun",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/7855843?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>非常不错，觉得Node12是继引入async await后又一个重要的更新</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-25T02:23:48.617Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cc1301537faec0ce1d06737",
+        "author": {
+          "loginname": "atian25",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/227713?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/zengming00\">@zengming00</a> 就最终目标（活到 2106 年）而言，感觉 9 不 9 都没啥区别，哈哈</p>\n</div>",
+        "ups": [
+          "5cc12846a86ae80ce64b3c93",
+          "5ce3bafde57aac76fed2ca85"
+        ],
+        "create_at": "2019-04-25T03:57:09.730Z",
+        "reply_id": "5cc10abc37faec0ce1d06425",
+        "is_uped": false
+      },
+      {
+        "id": "5cc1347237faec0ce1d0676b",
+        "author": {
+          "loginname": "zubincheung",
+          "avatar_url": "https://avatars0.githubusercontent.com/u/9758726?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>期待LTS</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-25T04:15:46.561Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cc13a13a86ae80ce64b3d24",
+        "author": {
+          "loginname": "justjavac",
+          "avatar_url": "https://avatars1.githubusercontent.com/u/359395?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>恐怖如斯</p>\n</div>",
+        "ups": [
+          "58cdfd7528be82df16560950",
+          "5d35d57fffed731686461975"
+        ],
+        "create_at": "2019-04-25T04:39:47.778Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cc2602237faec0ce1d06cc9",
+        "author": {
+          "loginname": "vellengs",
+          "avatar_url": "https://avatars1.githubusercontent.com/u/5743338?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/atian25\">@atian25</a>\n一年两个版本  100 个版本，需要到 2106年，欺负我小学数学没学好吗？</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-26T01:34:26.816Z",
+        "reply_id": "5cc06dcc37faec0ce1d062bb",
+        "is_uped": false
+      },
+      {
+        "id": "5cc2629237faec0ce1d06cea",
+        "author": {
+          "loginname": "atian25",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/227713?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/vellengs\">@vellengs</a> 终于有人发现了~</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-26T01:44:50.383Z",
+        "reply_id": "5cc2602237faec0ce1d06cc9",
+        "is_uped": false
+      },
+      {
+        "id": "5cc2803937faec0ce1d06ef2",
+        "author": {
+          "loginname": "lhpyfc",
+          "avatar_url": "https://avatars3.githubusercontent.com/u/46770247?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/atian25\">@atian25</a> 站在巨人的肩膀上</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-26T03:51:21.834Z",
+        "reply_id": "5cc1301537faec0ce1d06737",
+        "is_uped": false
+      },
+      {
+        "id": "5cc2d80ca86ae80ce64b4797",
+        "author": {
+          "loginname": "royalrover",
+          "avatar_url": "https://avatars1.githubusercontent.com/u/7369780?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/atian25\">@atian25</a> 感觉小学数学收到了挑战</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-26T10:06:04.505Z",
+        "reply_id": "5cc06dcc37faec0ce1d062bb",
+        "is_uped": false
+      },
+      {
+        "id": "5cc5269337faec0ce1d0784f",
+        "author": {
+          "loginname": "hyj1991",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/19908330?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>node-v100.0.0，想想就 emmm</p>\n</div>",
+        "ups": [
+          "5aa55294e7b166bb7b9ec944"
+        ],
+        "create_at": "2019-04-28T04:05:39.560Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cc6e29ba86ae80ce64b572d",
+        "author": {
+          "loginname": "JacksonTian",
+          "avatar_url": "https://avatars3.githubusercontent.com/u/327019?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/zengming00\">@zengming00</a> 只有虵才能看到吧</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-29T11:40:11.114Z",
+        "reply_id": "5cc05ed137faec0ce1d06265",
+        "is_uped": false
+      },
+      {
+        "id": "5cc6fe80a86ae80ce64b579d",
+        "author": {
+          "loginname": "justjavac",
+          "avatar_url": "https://avatars1.githubusercontent.com/u/359395?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/JacksonTian\">@JacksonTian</a> node12 都出了，深入浅出2 什么时候出啊</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-29T13:39:12.222Z",
+        "reply_id": "5cc6e29ba86ae80ce64b572d",
+        "is_uped": false
+      },
+      {
+        "id": "5cc7074ca86ae80ce64b57b8",
+        "author": {
+          "loginname": "atian25",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/227713?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/justjavac\">@justjavac</a> 很明显要等 node 20 啊</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-04-29T14:16:44.478Z",
+        "reply_id": "5cc6fe80a86ae80ce64b579d",
+        "is_uped": false
+      },
+      {
+        "id": "5ccba8b7776fb66e0d17189a",
+        "author": {
+          "loginname": "wujohns",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/4157244?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/zuohuadong\">@zuohuadong</a> 目前配合ts还是有bug，不过官方在修了（本来打算业余新工程直接上node12的。。。</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-03T02:34:31.221Z",
+        "reply_id": "5cc03fa337faec0ce1d061cb",
+        "is_uped": false
+      },
+      {
+        "id": "5cce3c7e5a5bae6e07812c71",
+        "author": {
+          "loginname": "zuohuadong",
+          "avatar_url": "https://avatars0.githubusercontent.com/u/11203929?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/wujohns\">@wujohns</a>  后端一直在用 nest.js ，也推荐 midway 之类的框架，默认就是 ts ~</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-05T01:29:34.496Z",
+        "reply_id": "5ccba8b7776fb66e0d17189a",
+        "is_uped": false
+      },
+      {
+        "id": "5cce54d65a5bae6e07812d9a",
+        "author": {
+          "loginname": "chapgaga",
+          "avatar_url": "https://avatars0.githubusercontent.com/u/9590859?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>ES6 模块仍然还在实验阶段，不过有了新的方式，具体参见这篇文章。\n链接打不开\n404We couldn’t find this page.</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-05T03:13:26.644Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cce5cf75a5bae6e07812e0b",
+        "author": {
+          "loginname": "atian25",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/227713?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/chapgaga\">@chapgaga</a> <a href=\"https://medium.com/@nodejs/announcing-a-new-experimental-modules-1be8d2d6c2ff\">https://medium.com/@nodejs/announcing-a-new-experimental-modules-1be8d2d6c2ff</a></p>\n<p>貌似是 CNode 的 BUG，cc <a href=\"/user/alsotang\">@alsotang</a></p>\n</div>",
+        "ups": [
+          "5d1c2d7034bca667bc6e4edf"
+        ],
+        "create_at": "2019-05-05T03:48:07.282Z",
+        "reply_id": "5cce54d65a5bae6e07812d9a",
+        "is_uped": false
+      },
+      {
+        "id": "5ccf9e185a5bae6e07813431",
+        "author": {
+          "loginname": "alsotang",
+          "avatar_url": "https://avatars1.githubusercontent.com/u/1147375?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/atian25\">@atian25</a> 我改改这个这则试试</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-06T02:38:16.702Z",
+        "reply_id": "5cce5cf75a5bae6e07812e0b",
+        "is_uped": false
+      },
+      {
+        "id": "5ccff083776fb66e0d1727e3",
+        "author": {
+          "loginname": "wushanchao",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/2227324?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/AnzerWall\">@AnzerWall</a> 等装饰器有了，离spring boot.js 不远了。</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-06T08:29:55.115Z",
+        "reply_id": "5cbfe009a86ae80ce64b3221",
+        "is_uped": false
+      },
+      {
+        "id": "5cd00e935a5bae6e07813811",
+        "author": {
+          "loginname": "liuyifengmvc",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/46715265?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>以关注</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-06T10:38:11.787Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cd0e406776fb66e0d172bf9",
+        "author": {
+          "loginname": "xuemeifenglin",
+          "avatar_url": "https://avatars3.githubusercontent.com/u/48575523?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>node 更新速度有些快哦     难道是用的人多了吗</p>\n</div>",
+        "ups": [
+          "5d1c2d7034bca667bc6e4edf"
+        ],
+        "create_at": "2019-05-07T01:48:54.325Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cd0e47e5a5bae6e07813ad1",
+        "author": {
+          "loginname": "atian25",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/227713?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/xuemeifenglin\">@xuemeifenglin</a> 正常速度，看下 <a href=\"https://github.com/nodejs/Release\">https://github.com/nodejs/Release</a> 就知道了，正常的迭代速度而已，类似 Chromium</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-07T01:50:54.061Z",
+        "reply_id": "5cd0e406776fb66e0d172bf9",
+        "is_uped": false
+      },
+      {
+        "id": "5cd13c10da4b2a7fe61d9255",
+        "author": {
+          "loginname": "alsotang",
+          "avatar_url": "https://avatars1.githubusercontent.com/u/1147375?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/atian25\">@atian25</a> 修了</p>\n</div>",
+        "ups": [
+          "4f447c2f0a8abae26e01b27d",
+          "5d2f18419969a529571d4d3b"
+        ],
+        "create_at": "2019-05-07T08:04:32.829Z",
+        "reply_id": "5ccf9e185a5bae6e07813431",
+        "is_uped": false
+      },
+      {
+        "id": "5cd151b1da4b2a7fe61d9390",
+        "author": {
+          "loginname": "junjufeng",
+          "avatar_url": "https://avatars3.githubusercontent.com/u/49501992?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>站在巨人的肩膀上  加油</p>\n</div>",
+        "ups": [
+          "5d1c2d7034bca667bc6e4edf"
+        ],
+        "create_at": "2019-05-07T09:36:49.274Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cd3937ae333b24979ca9961",
+        "author": {
+          "loginname": "dengnan123",
+          "avatar_url": "https://avatars3.githubusercontent.com/u/25699654?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>期待</p>\n</div>",
+        "ups": [
+          "5cbaf1ce37faec0ce1d04020"
+        ],
+        "create_at": "2019-05-09T02:42:02.741Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cd7da16d5fff6772a2fddb6",
+        "author": {
+          "loginname": "luckymore",
+          "avatar_url": "https://avatars0.githubusercontent.com/u/5390013?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>恐怖如斯, 恐怖如斯</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-12T08:32:22.513Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cde8a37e57aac76fed2ba30",
+        "author": {
+          "loginname": "hq45299",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/40853064?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/AnzerWall\">@AnzerWall</a> 1111</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-17T10:17:27.682Z",
+        "reply_id": "5cbfe009a86ae80ce64b3221",
+        "is_uped": false
+      },
+      {
+        "id": "5cde8a7f518e0954fc40f4f1",
+        "author": {
+          "loginname": "hq45299",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/40853064?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/zy445566\">@zy445566</a> kdfkgdfg</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-17T10:18:39.286Z",
+        "reply_id": "5cbfe111a86ae80ce64b323c",
+        "is_uped": false
+      },
+      {
+        "id": "5ce4b6714d4b857836e85621",
+        "author": {
+          "loginname": "kwoktung",
+          "avatar_url": "https://avatars1.githubusercontent.com/u/17919472?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>111</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-22T02:39:45.398Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5ce4d853e57aac76fed2d0a6",
+        "author": {
+          "loginname": "zweekend01",
+          "avatar_url": "https://avatars0.githubusercontent.com/u/26060563?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>1111</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-22T05:04:19.661Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5ce5f6114036f24194cf586e",
+        "author": {
+          "loginname": "ZeroSad",
+          "avatar_url": "https://avatars1.githubusercontent.com/u/36755212?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/kwoktung\">@kwoktung</a> 2222</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-05-23T01:23:29.242Z",
+        "reply_id": "5ce4b6714d4b857836e85621",
+        "is_uped": false
+      },
+      {
+        "id": "5cf63b091fe902120f31c0f1",
+        "author": {
+          "loginname": "spitWind",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/18753430?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>编译c++ 模块就傻眼了 ~.~</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-06-04T09:34:01.633Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5cf6602d95fcc914aa2661ce",
+        "author": {
+          "loginname": "waitingsong",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/1763067?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/spitWind\">@spitWind</a> node-gyp v4.0  已经支持 nodejs v12</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-06-04T12:12:29.074Z",
+        "reply_id": "5cf63b091fe902120f31c0f1",
+        "is_uped": false
+      },
+      {
+        "id": "5cfcbb5b95fcc914aa267183",
+        "author": {
+          "loginname": "spitWind",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/18753430?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/waitingsong\">@waitingsong</a> 模块编译不出来， 底层的库不支持  ~</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-06-09T07:55:07.942Z",
+        "reply_id": "5cf6602d95fcc914aa2661ce",
+        "is_uped": false
+      },
+      {
+        "id": "5cfe141e1fe902120f31d630",
+        "author": {
+          "loginname": "ZhelinCheng",
+          "avatar_url": "https://avatars0.githubusercontent.com/u/16441850?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/zuohuadong\">@zuohuadong</a> 自从掌握TS后，真香！</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-06-10T08:26:06.931Z",
+        "reply_id": "5cc03fa337faec0ce1d061cb",
+        "is_uped": false
+      },
+      {
+        "id": "5cff43b51fe902120f31da64",
+        "author": {
+          "loginname": "youarenode",
+          "avatar_url": "//gravatar.com/avatar/44a670c5229fa93a91be710fa3bd1fa9?size=48"
+        },
+        "content": "<div class=\"markdown-text\"><p>node 真好。爱生活，爱拉芳。</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-06-11T06:01:25.276Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5d06fc811fe902120f31fa3e",
+        "author": {
+          "loginname": "cch-HS",
+          "avatar_url": "https://avatars0.githubusercontent.com/u/49581852?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>11</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-06-17T02:35:45.202Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5d079f541fe902120f31ffc6",
+        "author": {
+          "loginname": "Jimyfar",
+          "avatar_url": "https://avatars0.githubusercontent.com/u/30786604?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>11</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-06-17T14:10:28.121Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5d19ce16cdb1f967c157756d",
+        "author": {
+          "loginname": "youarenode",
+          "avatar_url": "//gravatar.com/avatar/44a670c5229fa93a91be710fa3bd1fa9?size=48"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/lhpyfc\">@lhpyfc</a> 111</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-07-01T09:10:46.168Z",
+        "reply_id": "5cc2803937faec0ce1d06ef2",
+        "is_uped": false
+      },
+      {
+        "id": "5d26ddc58a8bf909209cd775",
+        "author": {
+          "loginname": "Billgo",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/5780482?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p>恐怖如斯 必须更新</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-07-11T06:57:09.703Z",
+        "reply_id": null,
+        "is_uped": false
+      },
+      {
+        "id": "5d280df0fa8ef0094e06452c",
+        "author": {
+          "loginname": "Pcman1056",
+          "avatar_url": "https://avatars1.githubusercontent.com/u/7260146?v=4&s=120"
+        },
+        "content": "<div class=\"markdown-text\"><p><a href=\"/user/zy445566\">@zy445566</a> 666</p>\n</div>",
+        "ups": [],
+        "create_at": "2019-07-12T04:34:56.338Z",
+        "reply_id": "5cbfe111a86ae80ce64b323c",
+        "is_uped": false
+      }
+    ],
+    "is_collect": false
+  }
+}
