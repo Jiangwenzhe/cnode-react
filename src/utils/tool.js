@@ -19,8 +19,8 @@ export const tabs = {
   }
 };
 
+// 时间戳转距离现在的时间的函数
 export const timeStampToTimeAgo = (timestamp) => {
-  console.log(moment(timestamp, "YYYY-MM-DD").startOf('day').fromNow());
   let timeStampToString = moment(timestamp, "YYYY-MM-DD").startOf('day').fromNow();
   if (timeStampToString.includes('day')) {
     return timeStampToString.replace('days ago', '天前');
@@ -30,3 +30,17 @@ export const timeStampToTimeAgo = (timestamp) => {
     return timeStampToString.replace(/(months|month) ago/s, '个月前').replace('a', '1');
   }
 };
+
+// 将后台返回的 html 文件转化为纯文本的函数
+export const htmlToString = (html) => {
+  const reg = /<\/?.+?\/?>/g;
+  return html.replace(reg, '');
+};
+
+// 编写react中的转化html函数，在组件中引入hmtl时可以保证安全性
+export const transferHTML = html => {
+  return {
+    __html: html
+  }
+};
+
