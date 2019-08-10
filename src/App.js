@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { HashRouter, Route, Redirect } from 'react-router-dom'
 import Header from './component/Header';
 import Home from './pages/Home';
+import TopicContent from './pages/TopicContent';
 import './App.scss';
 
 class App extends Component {
@@ -11,7 +12,8 @@ class App extends Component {
           <Header />
           <HashRouter>
             <div>
-              <Route exact path="/" component={Home} />
+              {/*<Route exact path="/" component={Home} />*/}
+              <Route exact path="/" component={TopicContent} />
               <Route exact path="/topic" render={() => <Redirect to="/" />} />
             </div>
           </HashRouter>
